@@ -29,19 +29,26 @@ class _AimyChatState extends State<AimyChat> {
     }
   }
 
-  void connectToWebSocket() {
+  void connectToWebSocket() async{
     const aimyURL = 'wss://aimy.prod.ulu.systems/chat/websocket/';
     channel = WebSocketChannel.connect(Uri.parse(aimyURL));
+    try{
+      await channel.ready;
+      // channel.stream.listen((message) {
+      //   channel.sink.add('received!');
+      //   handleAssistantMessage(message);
+      // },
+      //     onError: (error) {
+      //   print("WebSocket error: $error");
+      // }, onDone: () {
+      //   print("WebSocket closed");
+      // });
 
-    channel.stream.listen((message) {
-      handleAssistantMessage(message);
-    }, onError: (error) {
-      print("WebSocket error: $error");
-    }, onDone: () {
-      print("WebSocket closed");
-    });
+      channel.sink.add('data');
+    }catch (e){
+      print(e.toString());
+    }
 
-    channel.sink.add('data');
   }
 
   void handleAssistantMessage(String message) {
@@ -208,11 +215,24 @@ class _AimyChatState extends State<AimyChat> {
 
   @override
   Widget build(BuildContext context) {
-    return ChatMainPage(
-      svg: SvgPicture.asset(
-        'assets/aimy.svg', // Make sure to replace with your SVG asset path
-        height: 200.0,
-        width: 200.0,
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        child: StreamBuilder(
+          stream: channel.stream,
+          builder: (context, snapshot) {
+            return Text(snapshot.hasData ? '${snapshot.data}' : '');
+          },
+        ),
+          onPressed: (){
+        channel.sink.add('ping');
+        print('ping');
+      }),
+      body: ChatMainPage(
+        svg: SvgPicture.asset(
+          'assets/aimy.svg', // Make sure to replace with your SVG asset path
+          height: 200.0,
+          width: 200.0,
+        ),
       ),
     );
   }
