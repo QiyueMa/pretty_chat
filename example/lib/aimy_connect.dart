@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:pretty_chat/chat.dart';
@@ -18,6 +20,10 @@ class _AimyChatState extends State<AimyChat> {
   bool waitingForResponse = false;
   bool isSendingCustomMessage = false;
   bool needNewChatBubble = true;
+  late Timer timer;
+
+  final GlobalKey<ChatMainPageState> _chatKey = GlobalKey<ChatMainPageState>();
+
 
   @override
   void initState() {
@@ -29,26 +35,44 @@ class _AimyChatState extends State<AimyChat> {
     }
   }
 
-  void connectToWebSocket() async{
+  @override
+  void dispose() {
+    timer.cancel();
+    channel.sink.close(status.normalClosure);
+    super.dispose();
+  }
+
+  void connectToWebSocket() async {
     const aimyURL = 'wss://aimy.prod.ulu.systems/chat/websocket/';
     channel = WebSocketChannel.connect(Uri.parse(aimyURL));
-    try{
-      await channel.ready;
-      // channel.stream.listen((message) {
-      //   channel.sink.add('received!');
-      //   handleAssistantMessage(message);
-      // },
-      //     onError: (error) {
-      //   print("WebSocket error: $error");
-      // }, onDone: () {
-      //   print("WebSocket closed");
-      // });
-
-      channel.sink.add('data');
-    }catch (e){
+    try {
+      Map<String, dynamic> data = {
+        'type': 'user_message',
+        'content': 'Who are you',
+        'thread_id': null,
+        'assistant_id': 'asst_sGUjGI1N5GTImwwdtozersbG',
+      };
+      String jsonString = jsonEncode(data);
+      channel.sink.add(jsonString);
+      channel.stream.listen((message) {
+        handleAssistantMessage(message);
+      },
+          onError: (error) {
+        print("WebSocket error: $error");
+      }, onDone: () {
+        print("WebSocket closed");
+      });
+      startKeepAlive();
+    } catch (e) {
       print(e.toString());
     }
-
+  }
+  void startKeepAlive() {
+    timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      // Send a status request to keep the connection alive
+      channel.sink.add('Ping');
+      print('Keep-alive message sent.');
+    });
   }
 
   void handleAssistantMessage(String message) {
@@ -102,7 +126,7 @@ class _AimyChatState extends State<AimyChat> {
         needNewChatBubble = false;
       }
       final formattedMessage = formatMessageContent(content);
-      updateMessage(formattedMessage, waitingForResponse);
+      //updateMessage(formattedMessage, waitingForResponse);
       waitingForResponse = false;
     }
   }
@@ -170,6 +194,8 @@ class _AimyChatState extends State<AimyChat> {
 
   void updateMessage(String message, bool isCompleted) {
     // Update the message in your chat UI
+    _chatKey.currentState?.addMessageFromOutside(message);
+    print(message);
   }
 
   void updateCustomMessage(String message, int delay, String? fileId) {
@@ -203,36 +229,42 @@ class _AimyChatState extends State<AimyChat> {
   }
 
   Map<String, dynamic> decodeMessage(String message) {
-    // Implement your message decoding logic (e.g., JSON decoding)
-    return {};
-  }
-
-  @override
-  void dispose() {
-    channel.sink.close(status.normalClosure);
-    super.dispose();
+    Map<String, dynamic> jsonDecoder = jsonDecode(message);
+    return jsonDecoder;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        child: StreamBuilder(
-          stream: channel.stream,
-          builder: (context, snapshot) {
-            return Text(snapshot.hasData ? '${snapshot.data}' : '');
-          },
-        ),
-          onPressed: (){
-        channel.sink.add('ping');
-        print('ping');
-      }),
+      // floatingActionButton: FloatingActionButton(
+      //     child: StreamBuilder(
+      //       stream: channel.stream,
+      //       builder: (context, snapshot) {
+      //         print('${snapshot.data}');
+      //         return Text(snapshot.hasData ? '${snapshot.data}' : '');
+      //       },
+      //     ),
+      //     onPressed: () {
+      //
+      //       print('ping');
+      //     }),
       body: ChatMainPage(
+        key: _chatKey,
+        onPressed: (text){
+          Map<String, dynamic> data = {
+            'type': 'user_message',
+            'content': text.text,
+            'thread_id': threadId,
+            'assistant_id': 'asst_sGUjGI1N5GTImwwdtozersbG',
+          };
+          String jsonString = jsonEncode(data);
+          channel.sink.add(jsonString);
+        },
         svg: SvgPicture.asset(
           'assets/aimy.svg', // Make sure to replace with your SVG asset path
           height: 200.0,
           width: 200.0,
-        ),
+        ), messages: [],
       ),
     );
   }

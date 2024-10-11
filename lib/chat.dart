@@ -14,18 +14,20 @@ String randomString() {
 
 class ChatMainPage extends StatefulWidget {
   final Widget svg;
-  const ChatMainPage({super.key, required this.svg});
+  final List<types.Message> messages;
+  final void Function(types.PartialText) onPressed;
+  const ChatMainPage({super.key, required this.svg, required this.messages, required this.onPressed});
 
   @override
-  State<ChatMainPage> createState() => _ChatMainPageState();
+  State<ChatMainPage> createState() => ChatMainPageState();
 }
 
-class _ChatMainPageState extends State<ChatMainPage> {
+class ChatMainPageState extends State<ChatMainPage> {
+  late List<types.Message> _messages = [];
   String text1 = "Hi. how can I help you?";
   String text2 =
       "I'm Aimy, your personal chatbot assistant. With access to various data and a wealth of FAQ knowledge, I'm ready to answer your questions. I can also assist you with managing your fleet!";
 
-  late final List<types.Message> _messages;
   final _user = const types.User(
     id: '82091008-a484-4a89-ae75-a22bf8d6f3ac',
     firstName: 'July',
@@ -103,7 +105,22 @@ class _ChatMainPageState extends State<ChatMainPage> {
     });
   }
 
+  void addMessageFromOutside(String text) {
+    final textMessage = types.TextMessage(
+      author: _user2,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: randomString(),
+      text: text,
+      status: types.Status.sent,
+      showStatus: true,
+    );
+    setState(() {
+      _messages.insert(0, textMessage);
+    });
+  }
+
   void _handleSendPressed(types.PartialText message) {
+    widget.onPressed(message);
     final textMessage = types.TextMessage(
       author: _user,
       createdAt: DateTime.now().millisecondsSinceEpoch,
@@ -114,6 +131,7 @@ class _ChatMainPageState extends State<ChatMainPage> {
     );
 
     _addMessage(textMessage);
+
     //
     // final textMessage2 = types.TextMessage(
     //   author: _user2,
