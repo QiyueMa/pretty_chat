@@ -5,8 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pretty_chat/pretty_chat.dart';
 
-import 'aimy_connect.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -64,15 +62,14 @@ class _MyAppState extends State<MyApp> {
             ],
           ),
         ),
-        body: AimyChat(),
-
-        // ChatMainPage(
-        //   svg: SvgPicture.asset(
-        //     'assets/aimy.svg', // Make sure to replace with your SVG asset path
-        //     height: 200.0,
-        //     width: 200.0,
-        //   ),
-        // ),
+        body: ChatMainPage(
+          svg: SvgPicture.asset(
+            'assets/aimy.svg', // Make sure to replace with your SVG asset path
+            height: 200.0,
+            width: 200.0,
+          ),
+          //messages: [],
+        ),
       ),
     );
   }
