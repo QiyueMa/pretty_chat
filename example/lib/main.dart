@@ -29,6 +29,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
+          forceMaterialTransparency: true,
           title: const Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
