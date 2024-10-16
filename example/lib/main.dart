@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pretty_chat/pretty_chat.dart';
+import 'package:simple_shadow/simple_shadow.dart';
 
 void main() {
   runApp(const MyApp());
@@ -63,12 +64,18 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         body: ChatMainPage(
-          svg: SvgPicture.asset(
-            'assets/aimy.svg', // Make sure to replace with your SVG asset path
-            height: 200.0,
-            width: 200.0,
+          svg: SimpleShadow(
+            opacity: 0.6, // Default: 0.5
+            color: Colors.black, // Default: Black
+            offset: const Offset(5, 5), // Default: Offset(2, 2)
+            sigma: 7,
+            child: SvgPicture.asset(
+              'assets/aimy.svg', // Make sure to replace with your SVG asset path
+              height: 200.0,
+              width: 200.0,
+            ), // Default: 2
           ),
-          //messages: [],
+          assistantId: 'asst_sGUjGI1N5GTImwwdtozersbG',
         ),
       ),
     );
